@@ -15,9 +15,10 @@ std::vector<double> RegretMatching(const std::vector<double> &regrets)
 
     if (sum <= 1e-9)
     {
+        double uniform_probability = 1.0 / regrets.size();
         for (size_t i = 0; i < regrets.size(); ++i)
         {
-            strategy[i] = 1.0 / regrets.size();
+            strategy[i] = uniform_probability;
         }
     }
     else
