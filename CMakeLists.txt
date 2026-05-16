@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(kuhn 
     src/apps/kuhn_solve.cpp
     src/core/kuhn_game.cpp
+    src/solver/cfr.cpp
 )
 
 
