@@ -1,4 +1,5 @@
 #include "solver/cfr.hpp"
+#include <stdexcept>
 
 std::vector<double> RegretMatching(const std::vector<double> &regrets)
 {
@@ -30,4 +31,31 @@ std::vector<double> RegretMatching(const std::vector<double> &regrets)
     }
 
     return strategy;
+}
+
+char CardToChar(Card card)
+{
+    switch (card)
+    {
+    case Card::Jack:
+        return 'J';
+    case Card::Queen:
+        return 'Q';
+    case Card::King:
+        return 'K';
+    default:
+        break;
+    }
+    
+    throw std::logic_error("CardToChar: called on invalid card.");
+}
+
+InfoSetKey MakeInfoSetKey(Card card, const History& history)
+{
+    return std::string(1, CardToChar(card)) + history;
+}
+
+int CurrentPlayer(const History& history)
+{
+    return history.size() % 2;
 }

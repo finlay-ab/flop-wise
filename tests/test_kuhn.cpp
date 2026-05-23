@@ -73,8 +73,26 @@ void test_infoset()
     auto avg = is.AverageStrategy();
     assert(approx_eq(avg[0], 0.5));
     assert(approx_eq(avg[1], 0.5));
+}
 
-    
+void test_card_to_char() {
+    assert(CardToChar(Card::Jack) == 'J');
+    assert(CardToChar(Card::Queen) == 'Q');
+    assert(CardToChar(Card::King) == 'K');
+}
+
+void test_make_infoset_key() {
+    assert(MakeInfoSetKey(Card::Jack, "") == "J");
+    assert(MakeInfoSetKey(Card::Queen, "x") == "Qx");
+    assert(MakeInfoSetKey(Card::King, "xb") == "Kxb");
+    assert(MakeInfoSetKey(Card::Jack, "b") == "Jb");
+}
+
+void test_current_player() {
+    assert(CurrentPlayer("") == 0);    // P1 acts first
+    assert(CurrentPlayer("x") == 1);   // P2 responds to check
+    assert(CurrentPlayer("b") == 1);   // P2 responds to bet
+    assert(CurrentPlayer("xb") == 0);  // P1 responds to P2's bet
 }
 
 int main()
@@ -84,6 +102,8 @@ int main()
     test_payoff();
     test_regret_matching();
     test_infoset();
+    test_make_infoset_key();
+    test_current_player();
     std::cout << "All tests passed.\n";
     return 0;
 }
