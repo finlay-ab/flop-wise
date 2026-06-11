@@ -11,6 +11,49 @@ bool approx_eq(double a, double b, double eps = 1e-6)
     return std::abs(a - b) < eps;
 }
 
+void test_cfr_terminal_histories()
+{
+    CFRSolver solver;
+
+    assert(approx_eq(solver.CFR("xx", Card::King, Card::Jack, 1.0, 1.0), 1.0));
+    assert(approx_eq(solver.CFR("bf", Card::Jack, Card::Queen, 1.0, 1.0), 1.0));
+    assert(approx_eq(solver.CFR("bc", Card::King, Card::Jack, 1.0, 1.0), 2.0));
+    assert(approx_eq(solver.CFR("xbf", Card::King, Card::Jack, 1.0, 1.0), -1.0));
+    assert(approx_eq(solver.CFR("xbc", Card::King, Card::Jack, 1.0, 1.0), 2.0));
+}
+
+void test_cfr_run_iteration()
+{
+    CFRSolver solver;
+    assert(solver.NumInfoSets() == 0);
+
+    solver.RunIteration();
+
+    assert(solver.NumInfoSets() > 0);
+
+    auto root_strategy = solver.GetAverageStrategy(Card::Jack, "");
+    assert(root_strategy.size() == 2);
+    assert(approx_eq(root_strategy[0] + root_strategy[1], 1.0));
+}
+
+void test_cfr_training()
+{
+    CFRSolver solver;
+    const int iterations = 1000;
+    for (int i = 0; i < iterations; ++i)
+        solver.RunIteration();
+
+    assert(solver.NumInfoSets() > 0);
+    assert(solver.HasInfoSet(Card::Jack, ""));
+
+    auto strat = solver.GetAverageStrategy(Card::Jack, "");
+    assert(strat.size() == 2);
+    assert(approx_eq(strat[0] + strat[1], 1.0));
+    for (double p : strat) {
+        assert(p >= 0.0 && p <= 1.0);
+    }
+}
+
 // core/kuhn_game
 void test_apply_action()
 {
@@ -100,6 +143,8 @@ int main()
     test_apply_action();
     test_is_terminal();
     test_payoff();
+    test_cfr_terminal_histories();
+    test_cfr_run_iteration();
     test_regret_matching();
     test_infoset();
     test_make_infoset_key();
