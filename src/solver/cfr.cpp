@@ -247,3 +247,168 @@ std::vector<std::pair<Card, double>> CFRSolver::QueryBestHands(size_t top_n) con
     if (top_n < vals.size()) vals.resize(top_n);
     return vals;
 }
+
+int CFRSolver::RunIterationsUntilConverged(int max_iters, int check_interval, double eps, int patience, bool use_exploitability)
+{
+    if (max_iters <= 0 || check_interval <= 0 || patience <= 0 || eps < 0.0)
+        throw std::invalid_argument("invalid convergence parameters");
+
+    std::unordered_map<InfoSetKey, std::vector<double>> prev_avg;
+    int stable_count = 0;
+
+    for (int iter = 1; iter <= max_iters; ++iter)
+    {
+        RunIteration();
+
+        if (iter % check_interval != 0)
+            continue;
+
+        double max_change = 0.0;
+
+        // compute current average strategies and compare to previous snapshot
+        for (const auto& p : infosets_)
+        {
+            const InfoSetKey& key = p.first;
+            const InfoSet& is = p.second;
+            auto curr = is.AverageStrategy();
+
+            auto it = prev_avg.find(key);
+            if (it == prev_avg.end())
+            {
+                // treat unseen infoset as moderate change
+                for (double v : curr) max_change = std::max(max_change, std::abs(v - 0.0));
+            }
+            else
+            {
+                const auto& prev = it->second;
+                for (size_t i = 0; i < curr.size() && i < prev.size(); ++i)
+                {
+                    max_change = std::max(max_change, std::abs(curr[i] - prev[i]));
+                }
+            }
+
+            prev_avg[key] = curr;
+        }
+
+        if (!use_exploitability)
+        {
+            if (max_change <= eps)
+            {
+                ++stable_count;
+                if (stable_count >= patience)
+                    return iter;
+            }
+            else
+            {
+                stable_count = 0;
+            }
+        }
+        else
+        {
+            double ex = Exploitability();
+            if (ex <= eps)
+            {
+                ++stable_count;
+                if (stable_count >= patience)
+                    return iter;
+            }
+            else
+            {
+                stable_count = 0;
+            }
+        }
+    }
+
+    return max_iters;
+}
+
+// Best-response recursion: returns payoff to player 1 when `best_player` plays a
+// best response and the opponent follows the current average strategy.
+static double BestResponseRec(const CFRSolver& solver, const History& history, Card p1_card, Card p2_card, int best_player)
+{
+    if (IsTerminal(history))
+    {
+        return Payoff(history, p1_card, p2_card);
+    }
+
+    int player = CurrentPlayer(history);
+    std::vector<Action> legal_actions = LegalActions(history);
+
+    // If it's the best-response player's turn, choose the action that maximizes
+    // (for player 0) or minimizes (for player 1) the payoff to player 1.
+    if (player == best_player)
+    {
+        double best_val = (best_player == 0) ? -1e300 : 1e300;
+        for (size_t i = 0; i < legal_actions.size(); ++i)
+        {
+            History next = ApplyAction(history, legal_actions[i]);
+            double child = BestResponseRec(solver, next, p1_card, p2_card, best_player);
+            if (best_player == 0)
+            {
+                if (child > best_val) best_val = child;
+            }
+            else
+            {
+                if (child < best_val) best_val = child;
+            }
+        }
+        return best_val;
+    }
+
+    // Otherwise the opponent follows the average strategy at this infoset (or uniform).
+    InfoSetKey key = MakeInfoSetKey(player == 0 ? p1_card : p2_card, history);
+    std::vector<double> strat;
+    if (solver.HasInfoSet(player == 0 ? p1_card : p2_card, history))
+    {
+        strat = solver.GetAverageStrategy(player == 0 ? p1_card : p2_card, history);
+    }
+    else
+    {
+        double uniform = 1.0 / legal_actions.size();
+        strat.assign(legal_actions.size(), uniform);
+    }
+
+    double val = 0.0;
+    for (size_t i = 0; i < legal_actions.size(); ++i)
+    {
+        History next = ApplyAction(history, legal_actions[i]);
+        double child = BestResponseRec(solver, next, p1_card, p2_card, best_player);
+        val += strat[i] * child;
+    }
+    return val;
+}
+
+double CFRSolver::Exploitability() const
+{
+    std::vector<std::pair<Card, Card>> deals = {
+        {Card::Jack, Card::Queen},
+        {Card::Jack, Card::King},
+        {Card::Queen, Card::Jack},
+        {Card::Queen, Card::King},
+        {Card::King, Card::Jack},
+        {Card::King, Card::Queen},
+    };
+
+    double br1_sum = 0.0;
+    double br2_sum = 0.0;
+    int count = 0;
+
+    for (const auto& d : deals)
+    {
+        Card p1 = d.first;
+        Card p2 = d.second;
+        double v1 = BestResponseRec(*this, "", p1, p2, 0); // value to p1 when p1 best responds
+        double v2_p1persp = BestResponseRec(*this, "", p1, p2, 1); // value to p1 when p2 best responds
+        br1_sum += v1;
+        br2_sum += -v2_p1persp; // convert to player2's perspective
+        ++count;
+    }
+
+    if (count == 0) return 0.0;
+
+    double br1 = br1_sum / count;
+    double br2 = br2_sum / count;
+
+    // NashConv = BR1 + BR2; exploitability = NashConv / 2
+    return (br1 + br2) / 2.0;
+}

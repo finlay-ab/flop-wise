@@ -25,6 +25,9 @@ public:
     bool HasInfoSet(Card card, const History& history) const;
     void SaveAverageStrategies(const std::string& filename) const;
     std::vector<std::pair<Card, double>> QueryBestHands(size_t top_n = 3) const;
+    int RunIterationsUntilConverged(int max_iters, int check_interval, double eps, int patience = 3, bool use_exploitability = false);
+    double Exploitability() const;
+    double EvaluateAveragePolicy(const History& history, Card p1_card, Card p2_card) const;
 
 private:
     std::unordered_map<InfoSetKey, InfoSet> infosets_;
@@ -34,5 +37,5 @@ private:
 
     InfoSet& GetOrCreateInfoSet(const InfoSetKey& key, size_t num_actions);
     double CFR(const History& history, Card p1_card, Card p2_card, double reach_p1, double reach_p2);
-    double EvaluateAveragePolicy(const History& history, Card p1_card, Card p2_card) const;
+    
 };

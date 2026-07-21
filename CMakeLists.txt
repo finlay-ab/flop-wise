@@ -10,6 +10,7 @@ add_executable(kuhn
     src/core/kuhn_game.cpp
     src/solver/cfr.cpp
     src/solver/infoset.cpp
+    src/solver/strategy_book.cpp
 )
 
 target_include_directories(kuhn PRIVATE src)
@@ -20,6 +21,7 @@ add_executable(kuhn_tests
     src/core/kuhn_game.cpp
     src/solver/cfr.cpp
     src/solver/infoset.cpp
+    src/solver/strategy_book.cpp
 )
 
 target_include_directories(kuhn_tests PRIVATE src)

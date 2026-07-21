@@ -1,18 +1,49 @@
 #include <iostream>
+#include <string>
+#include <cstdlib>
 #include "core/kuhn_game.hpp"
 #include "solver/cfr.hpp"
 
 int main(int argc, char** argv)
 {
-    int iterations = 1000;
-    if (argc > 1)
-        iterations = std::atoi(argv[1]);
-
     CFRSolver solver;
-    for (int i = 0; i < iterations; ++i)
-        solver.RunIteration();
 
-    std::cout << "Iterations: " << iterations << std::endl;
+    // Default save file behavior (compatible with previous behavior)
+    std::string savefile = "strategies.csv";
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--save" && i + 1 < argc) {
+            savefile = argv[i+1];
+        }
+        if (std::string(argv[i]) == "--no-save") {
+            savefile = "";
+        }
+    }
+
+    // Converge mode: --converge [max_iters] [eps]
+    if (argc > 1 && std::string(argv[1]) == "--converge") {
+        int max_iters = 100000;
+        double eps = 1e-3;
+        if (argc > 2) max_iters = std::atoi(argv[2]);
+        if (argc > 3) eps = std::atof(argv[3]);
+
+        int check_interval = 100;
+        int patience = 3;
+
+        int done = solver.RunIterationsUntilConverged(max_iters, check_interval, eps, patience, true);
+        std::cout << "Converged iterations: " << done << " (max " << max_iters << ")" << std::endl;
+        std::cout << "Exploitability: " << solver.Exploitability() << std::endl;
+    }
+    else {
+        int iterations = 1000;
+        if (argc > 1)
+            iterations = std::atoi(argv[1]);
+
+        for (int i = 0; i < iterations; ++i)
+            solver.RunIteration();
+
+        std::cout << "Iterations: " << iterations << std::endl;
+    }
+
     std::cout << "InfoSets: " << solver.NumInfoSets() << std::endl;
 
     if (solver.HasInfoSet(Card::Jack, "")) {
@@ -24,16 +55,13 @@ int main(int argc, char** argv)
         std::cout << "No root infoset found." << std::endl;
     }
 
-    // optionally save strategies
-    std::string savefile = "strategies.csv";
-    if (argc > 2 && std::string(argv[2]) == "--save" && argc > 3)
-        savefile = argv[3];
-
-    try {
-        solver.SaveAverageStrategies(savefile);
-        std::cout << "Saved strategies to " << savefile << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Warning: could not save strategies: " << e.what() << std::endl;
+    if (!savefile.empty()) {
+        try {
+            solver.SaveAverageStrategies(savefile);
+            std::cout << "Saved strategies to " << savefile << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "Warning: could not save strategies: " << e.what() << std::endl;
+        }
     }
 
     auto best = solver.QueryBestHands(3);

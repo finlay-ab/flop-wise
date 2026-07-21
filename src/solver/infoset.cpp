@@ -11,6 +11,9 @@ InfoSet::InfoSet(size_t num_actions)
 void InfoSet::AddRegret(size_t action_idx, double regret)
 {
     cumulative_regrets_[action_idx] += regret;
+    // CFR+: clamp cumulative regrets to non-negative values to speed convergence
+    if (cumulative_regrets_[action_idx] < 0.0)
+        cumulative_regrets_[action_idx] = 0.0;
 }
 
 void InfoSet::AddStrategy(size_t action_idx, double weight)

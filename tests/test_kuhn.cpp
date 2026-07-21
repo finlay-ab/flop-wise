@@ -149,6 +149,19 @@ int main()
     test_infoset();
     test_make_infoset_key();
     test_current_player();
+    // convergence early-stop smoke test
+    {
+        CFRSolver s;
+        int done = s.RunIterationsUntilConverged(100, 1, 2.0, 1);
+        assert(done > 0 && done <= 100);
+    }
+    // exploitability smoke test
+    {
+        CFRSolver s;
+        s.RunIteration();
+        double ex = s.Exploitability();
+        assert(ex >= 0.0);
+    }
     std::cout << "All tests passed.\n";
     return 0;
 }
