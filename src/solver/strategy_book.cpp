@@ -1,5 +1,5 @@
 #include "solver/strategy_book.hpp"
-#include "solver/cfr.hpp"
+#include "core/kuhn_game.hpp"
 
 #include <fstream>
 #include <sstream>

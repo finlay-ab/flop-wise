@@ -90,3 +90,20 @@ double Payoff(const History &history, Card player1, Card player2)
 
     throw std::logic_error("Payoff: called on an invalid history: \"" + history + "\"");
 }
+
+char CardToChar(Card card)
+{
+    switch (card)
+    {
+    case Card::Jack:
+        return 'J';
+    case Card::Queen:
+        return 'Q';
+    case Card::King:
+        return 'K';
+    default:
+        break;
+    }
+
+    throw std::logic_error("CardToChar: called on invalid card.");
+}

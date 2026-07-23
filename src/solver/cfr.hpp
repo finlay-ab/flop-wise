@@ -2,18 +2,14 @@
 
 #include <unordered_map>
 #include <vector>
-#include <numeric>
-#include "core/kuhn_game.hpp"
-#include "solver/infoset.hpp"
 #include <stdexcept>
 #include <utility>
 #include <string>
+#include "core/kuhn_game.hpp"
+#include "solver/infoset.hpp"
 
 using InfoSetKey = std::string;
 
-std::vector<double> RegretMatching(const std::vector<double>& regrets);
-
-char CardToChar(Card card);
 InfoSetKey MakeInfoSetKey(Card card, const History& history);
 int CurrentPlayer(const History& history);
 
@@ -32,10 +28,9 @@ public:
 private:
     std::unordered_map<InfoSetKey, InfoSet> infosets_;
 
-    // allows for testing of terminal wihtout making it public
+    // allows for testing of terminal without making it public
     friend void test_cfr_terminal_histories();
 
     InfoSet& GetOrCreateInfoSet(const InfoSetKey& key, size_t num_actions);
     double CFR(const History& history, Card p1_card, Card p2_card, double reach_p1, double reach_p2);
-    
 };

@@ -22,4 +22,4 @@ std::vector<Action> LegalActions(const History& history);
 bool IsTerminal(const History& history);
 double Payoff(const History& history, Card player1, Card player2);
 History ApplyAction(const History& history, Action action);
-
+char CardToChar(Card card);

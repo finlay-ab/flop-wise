@@ -149,6 +149,8 @@ int main()
     test_infoset();
     test_make_infoset_key();
     test_current_player();
+    test_cfr_training();
+    test_card_to_char();
     // convergence early-stop smoke test
     {
         CFRSolver s;
